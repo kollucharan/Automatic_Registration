@@ -1,11 +1,18 @@
 
 const express = require('express');
 const axios = require('axios');
+const path = require('path');
 const app = express();
+
+require('dotenv').config();
+
+const HUBSPOT_PORTAL_ID = process.env.HUBSPOT_PORTAL_ID;
+const HUBSPOT_FORM_ID = process.env.HUBSPOT_FORM_ID;
+
 const port = process.env.PORT || 3000;
 
-const HUBSPOT_PORTAL_ID = '242419580';  
-const HUBSPOT_FORM_ID = '7b106872-95da-452a-bca3-dbb54634e562'; 
+// const HUBSPOT_PORTAL_ID = '242419580';  
+// const HUBSPOT_FORM_ID = '7b106872-95da-452a-bca3-dbb54634e562'; 
 
 app.get('/register', async (req, res) => {
   try {
@@ -26,7 +33,7 @@ app.get('/register', async (req, res) => {
          
         ],
         context: {
-          pageUri: "https://your-website.com/register",
+          pageUri: "https://www.talview.com/en/thank-you",
           pageName: "Auto Registration"
         }
       },
@@ -48,7 +55,8 @@ app.get('/register', async (req, res) => {
     
   } catch (error) {
     console.error('Registration error:', error);
-    res.status(500).send('Registration failed. Please try again later.');
+  
+   res.sendFile(path.join(__dirname, 'index.html'));
   }
 });
 
