@@ -93,9 +93,8 @@ async function emailHasSubmittedForm(email) {
   
     const submissions = response.data.results || [];
     
-   console.log(submissions);
     return submissions.some(submission => {
-      const emailField = submission.values.find(field => field.name === 'email');
+      const emailField = submission.values.find(field => field.name === 'Email');
       return emailField && emailField.value.toLowerCase() === email.toLowerCase();
     });
   } catch (error) {
@@ -127,7 +126,7 @@ app.get('/register', async (req, res) => {
       {
         fields: [
           {
-            name: "email",
+            name: "Email",
             value: email
           }
         ],
