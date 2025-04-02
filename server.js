@@ -71,14 +71,13 @@ app.get('/register', async (req, res) => {
     const email = req.query.email;
     
     if (!email) {
-      return res.status(400).send('Email parameter is required');
+      return res.status(400).sendFile(path.join(__dirname, 'index.html'));
     }
     
   
     const hasSubmitted = await emailHasSubmittedForm(email);
     
-    if (hasSubmitted) {
-      
+    if (hasSubmitted) {  
     return  res.sendFile(path.join(__dirname, 'alreadyregistered.html'));
     }
     
