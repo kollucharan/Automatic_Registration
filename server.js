@@ -93,7 +93,7 @@ async function emailHasSubmittedForm(email) {
   
     const submissions = response.data.results || [];
     
-   
+   console.log(submissions);
     return submissions.some(submission => {
       const emailField = submission.values.find(field => field.name === 'email');
       return emailField && emailField.value.toLowerCase() === email.toLowerCase();
@@ -113,12 +113,12 @@ app.get('/register', async (req, res) => {
       return res.status(400).send('Email parameter is required');
     }
     
-   
+  
     const hasSubmitted = await emailHasSubmittedForm(email);
     
     if (hasSubmitted) {
       
-      return res.redirect('https://www.talview.com/en/already-submitted');
+    return  res.sendFile(path.join(__dirname, 'alreadyregistered.html'));
     }
     
    
@@ -151,7 +151,7 @@ app.get('/register', async (req, res) => {
     
   } catch (error) {
   
-    res.sendFile(path.join(__dirname, 'index.html'));
+ return  res.sendFile(path.join(__dirname, 'index.html'));
   }
 });
 
