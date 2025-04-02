@@ -100,7 +100,7 @@ async function emailHasSubmittedForm(email) {
   } catch (error) {
     console.error('Error checking form submissions:', error.message);
    
-    return false;
+   throw new Error('Error checking form submissions');
   }
 }
 
@@ -129,6 +129,7 @@ app.get('/register', async (req, res) => {
             name: "Email",
             value: email
           }
+          
         ],
         context: {
           pageUri: "https://www.talview.com/en/thank-you",
