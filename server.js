@@ -1,122 +1,84 @@
 
 const express = require('express');
-const axios = require('axios');
 const path = require('path');
-const app = express();
-
 require('dotenv').config();
 
-const HUBSPOT_PORTAL_ID = process.env.HUBSPOT_PORTAL_ID;
-const HUBSPOT_FORM_ID = process.env.HUBSPOT_FORM_ID;
-const HUBSPOT_ACCESS_TOKEN = process.env.HUBSPOT_ACCESS_TOKEN;
+const { google } = require('googleapis');
+const app = express();
 const port = process.env.PORT || 3000;
 
+const SPREADSHEET_ID = process.env.SPREADSHEET_ID; 
+const SHEET_NAME = process.env.SHEET_NAME || 'Sheet1'; 
+
+const auth = new google.auth.GoogleAuth({
+  keyFile: './credentials.json',
+  scopes: ['https://www.googleapis.com/auth/spreadsheets']
+});
+const sheets = google.sheets({ version: 'v4', auth });
 
 
-
-async function emailHasSubmittedForm(email) {
-  let allSubmissions = [];
-  let after = null; 
-
+async function emailExists(email) {
   try {
-   
-    while (true) {
-      const response = await axios.get(
-        `https://api.hubapi.com/form-integrations/v1/submissions/forms/${HUBSPOT_FORM_ID}`,
-        {
-          params: {
-            limit: 50,  // Fetch 50 submissions per request
-            after: after, // Use the cursor for pagination (will be null for the first request)
-          },
-          headers: {
-            'Authorization': `Bearer ${HUBSPOT_ACCESS_TOKEN}`,
-            'Content-Type': 'application/json'
-          }
+    const res = await sheets.spreadsheets.values.get({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `${SHEET_NAME}!A:A`
+    });
+    const rows = res.data.values;
+    if (rows) {
+      for (let i = 0; i < rows.length; i++) {
+        if (rows[i][0].toLowerCase() === email.toLowerCase()) {
+          return true;
         }
-      );
-
-      const submissions = response.data.results || [];
-      allSubmissions = allSubmissions.concat(submissions);
-
-     
-      if (response.data.paging && response.data.paging.next) {
-        after = response.data.paging.next.after;
-      } else {
-        break;
       }
     }
-
-    
-    for (const submission of allSubmissions) {
-      console.log('Checking submission values:', submission.values);
-      const emailField = submission.values.find(field =>
-        field.name.toLowerCase() === 'email'
-      );
-      
-      if (emailField && emailField.value.toLowerCase() === email.toLowerCase()) {
-        return true;
-      }
-    }
-    
     return false;
   } catch (error) {
-    console.error('Error checking form submissions:', error.message);
-    throw new Error('Error checking form submissions');
+    console.error('Error reading from Google Sheets:', error.message);
+    throw new Error('Error checking for email in Google Sheets');
   }
 }
 
 
+async function addEmail(email) {
+  try {
+    await sheets.spreadsheets.values.append({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `${SHEET_NAME}!A:A`,
+      valueInputOption: 'RAW',
+      resource: {
+        values: [[email]]
+      }
+    });
+  } catch (error) {
+    console.error('Error writing to Google Sheets:', error.message);
+    throw new Error('Error adding email to Google Sheets');
+  }
+}
+
 app.get('/register', async (req, res) => {
   try {
     const email = req.query.email;
-    
     if (!email) {
       return res.status(400).sendFile(path.join(__dirname, 'index.html'));
     }
     
-  
-    const hasSubmitted = await emailHasSubmittedForm(email);
     
-    if (hasSubmitted) {  
-    return  res.sendFile(path.join(__dirname, 'alreadyregistered.html'));
+    const exists = await emailExists(email);
+    if (exists) {
+      return res.sendFile(path.join(__dirname, 'alreadyregistered.html'));
     }
     
    
-    const hubspotResponse = await axios.post(
-      `https://api.hsforms.com/submissions/v3/integration/submit/${HUBSPOT_PORTAL_ID}/${HUBSPOT_FORM_ID}`,
-      {
-        fields: [
-          {
-            name: "Email",
-            value: email
-          }
-          
-        ],
-        context: {
-          pageUri: "https://www.talview.com/en/thank-you",
-          pageName: "Auto Registration"
-        }
-      },
-      {
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      }
-    );
+    await addEmail(email);
     
-    if (hubspotResponse.status === 200) {
-      return res.redirect('https://www.talview.com/en/thank-you');
-    } else {
-      throw new Error('HubSpot submission failed');
-    }
-    
+   
+    return res.redirect('https://www.talview.com/en/thank-you');
   } catch (error) {
     console.log('Registration error:', error.message);
-  
- return  res.sendFile(path.join(__dirname, 'index.html'));
+    return res.sendFile(path.join(__dirname, 'index.html'));
   }
 });
 
 app.listen(port, () => {
-  console.log(`Auto-registration server running on port ${port}`);
+  console.log(`Server running on port ${port}`);
 });
