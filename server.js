@@ -12,7 +12,10 @@ const SHEET_NAME = process.env.SHEET_NAME || 'Sheet1';
 
 const auth = new google.auth.GoogleAuth({
   // keyFile: './credentials.json',
-  keyFile: './credentials.json.',
+  // keyFile: './credentials.json.',
+  // Correct: No extra period
+keyFile: './credentials.json',
+
 
   scopes: ['https://www.googleapis.com/auth/spreadsheets']
 });
