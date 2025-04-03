@@ -11,7 +11,9 @@ const SPREADSHEET_ID = process.env.SPREADSHEET_ID;
 const SHEET_NAME = process.env.SHEET_NAME || 'Sheet1'; 
 
 const auth = new google.auth.GoogleAuth({
-  keyFile: './credentials.json',
+  // keyFile: './credentials.json',
+  keyFile: '/etc/secrets/credentials.json.',
+
   scopes: ['https://www.googleapis.com/auth/spreadsheets']
 });
 const sheets = google.sheets({ version: 'v4', auth });
